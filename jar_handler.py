@@ -12,13 +12,16 @@ class JarCall:
         call = self.base_call
         call.append(self.jar_path)
         call.extend(params)
-
+        print('LEN CALL: %d' % len(call))
         print('CALL:\t', call)
         print('-'*50, '\n')
 
-        output = subprocess.call(call, stdout=None, stderr=None)
-        if output > 0:
-            print('Warning, result was %s ' % output)
+        subprocess.call(call, stdout=None, stderr=None)
+        # output = subprocess.call(call, stdout=None, stderr=None)
+        # if output > 0:
+        #     print('Warning, result was %s ' % output)
+        fitness = 0.1
+        return fitness
 
 
 # caller = JarCall(path='omnisia.jar')
