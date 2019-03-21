@@ -20,8 +20,6 @@ class JarCall:
         # output = subprocess.call(call, stdout=None, stderr=None)
         # if output > 0:
         #     print('Warning, result was %s ' % output)
-        fitness = 0.1
-        return fitness
 
 
 # caller = JarCall(path='omnisia.jar')

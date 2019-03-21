@@ -8,6 +8,35 @@ import gene_handler as gh
 from jar_handler import JarCall
 from switch_handler import Switches
 
+extension_map = {'COSIATEC': '.cos',
+                 'SIATECCompress': '.SIATECCompress',
+                 'Forth': '.Forth',
+                 'RecurSIA': '.RecurSIA'}
+
+
+def read_compression_from_file(f_path):
+    with open(f_path) as f:
+        for line in f:
+            if 'compressionRatio' in line:
+                return line
+
+
+def get_path_for_results(base_path, piece, algorithm):
+    extension = extension_map[algorithm]
+    print(extension)
+    for item in os.listdir(base_path):
+        new_path = os.path.join(base_path, item)
+        if os.path.isdir(new_path):
+            for file in os.listdir(new_path):
+                file_path = os.path.join(new_path, file)
+                print(os.path.splitext(file)[1])
+                if extension == os.path.splitext(file)[1]:
+                    compression_ratio = read_compression_from_file(file_path)
+                    # exit(417)
+                    return compression_ratio
+                exit(999)
+
+
 
 def parse_samples(path=''):
     pieces = []
@@ -17,11 +46,10 @@ def parse_samples(path=''):
     return pieces
 
 
-def get_fitness_for_generation(chromosomes):
+def get_fitness_for_generation(chromosomes, folder, piece, algo):
     param_fitnesses = {}
     for member in chromosomes:
-        params = [member['recalg'],
-                  member['d'],
+        params = [member['d'],
                   member['rrt']]
 
         if member['ct'] != '':
@@ -49,6 +77,8 @@ def get_fitness_for_generation(chromosomes):
 
         call_args = [switch_mngr.algorithm_prefix,
                      switch_mngr.algorithm,
+                     switch_mngr.recursia,
+                     switch_mngr.recalg_alg,
                      switch_mngr.input_file_prefix,
                      switch_mngr.input_file]
 
@@ -60,8 +90,10 @@ def get_fitness_for_generation(chromosomes):
         print((len(filtered_call_args)))
         print('<' * 100)
         caller = JarCall('omnisia3.jar')
-        fitness = caller.make_call(filtered_call_args)
-        param_fitnesses[params] = fitness
+        caller.make_call(filtered_call_args)
+
+        compression_path = get_path_for_results(folder, piece, algo)
+        # param_fitnesses[params] = fitness
     pprint.pprint(param_fitnesses)
     return param_fitnesses
 
@@ -74,6 +106,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--base", type=str, default="COSIATEC",
                         help="Base algorithm to start the evolution with.")
+    parser.add_argument("--recalg", type=str, default="COSIATEC",
+                        help="Base algorithm to start the evolution with.")
     parser.add_argument("--data", type=str, default="Fugues",
                         help="Base algorithm to start the evolution with.")
     # parser.add_argument("--port", type=int, default=9559,
@@ -83,8 +117,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     population_size = 50
-
-    pieces = parse_samples(os.path.join('samples', args.data))
+    folder_path = os.path.join('samples', args.data)
+    pieces = parse_samples(folder_path)
     elapsed_times = []
     all_start = time.time()
 
@@ -93,10 +127,9 @@ if __name__ == '__main__':
         print('Evolving for piece: %s' % piece)
         print('#' * 50)
         # >>>>>
-        switch_mngr = Switches(str(args.base), piece)
+        switch_mngr = Switches(str(args.base), piece, str(args.recalg))
 
-        onoff_switches = {'recalg': switch_mngr.recursia,
-                          'd': switch_mngr.pitch,
+        onoff_switches = {'d': switch_mngr.pitch,
                           'ct': switch_mngr.comp_trawler,
                           'rsd': switch_mngr.r_superdiags,
                           'rrt': switch_mngr.rrt}
@@ -113,8 +146,7 @@ if __name__ == '__main__':
 
         artificially_selected = []
         chromosomes = gh.make_population(onoff_switches, multi_switches, population_size)
-
-        param_fitness_dict = get_fitness_for_generation(chromosomes)
+        param_fitness_dict = get_fitness_for_generation(chromosomes, folder_path, piece, args.base)
 
     print('\n')
     print('#' * 50)

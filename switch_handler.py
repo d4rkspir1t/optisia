@@ -1,11 +1,16 @@
 class Switches:
-    def __init__(self, base, input_f):
+    def __init__(self, base, input_f, recalg):
         self.algorithm_prefix = '-a'
         self.algorithm = base
         self.input_file_prefix = '-i'
         self.input_file = input_f  # -i
 
-        self.recursia = ['', '-recalg']  # -recalg, only when recursia
+        if self.algorithm == 'RecurSIA':
+            self.recursia = '-recalg'  # -recalg, only when recursia
+            self.recalg_alg = recalg
+        else:
+            self.recursia = ''
+            self.recalg_alg = ''
 
         self.pitch = ['', '-d']  # -d
 
