@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 import os
+import pprint
 import time
 
 import gene_handler as gh
@@ -14,6 +15,55 @@ def parse_samples(path=''):
         for name in files:
             pieces.append(os.path.join(root, name))
     return pieces
+
+
+def get_fitness_for_generation(chromosomes):
+    param_fitnesses = {}
+    for member in chromosomes:
+        params = [member['recalg'],
+                  member['d'],
+                  member['rrt']]
+
+        if member['ct'] != '':
+            params.extend([member['ct'],
+                           switch_mngr.ct_min_comp_prefix,
+                           member['cta'],
+                           switch_mngr.ct_max_comp_prefix,
+                           member['ctb']
+                           ])
+        else:
+            params.extend([member['ct'],
+                           '',  # ct_min_comp_prefix
+                           '',  # cta
+                           '',  # ct_max_comp_prefix
+                           ''])  # ctb
+
+        if member['rsd'] != '':
+            params.extend([member['rsd'],
+                           switch_mngr.r_count_prefix,
+                           member['r']])
+        else:
+            params.extend([member['rsd'],
+                           '',  # r_count_prefix
+                           ''])  # r
+
+        call_args = [switch_mngr.algorithm_prefix,
+                     switch_mngr.algorithm,
+                     switch_mngr.input_file_prefix,
+                     switch_mngr.input_file]
+
+        call_args.extend(params)
+        filtered_call_args = []
+        for param in call_args:
+            if param != '':
+                filtered_call_args.append(param)
+        print((len(filtered_call_args)))
+        print('<' * 100)
+        caller = JarCall('omnisia3.jar')
+        fitness = caller.make_call(filtered_call_args)
+        param_fitnesses[params] = fitness
+    pprint.pprint(param_fitnesses)
+    return param_fitnesses
 
 
 def get_compression_from_output(file=''):
@@ -32,9 +82,12 @@ if __name__ == '__main__':
     #                     help="Plotting recorded variable lists")
     args = parser.parse_args()
 
+    population_size = 50
+
     pieces = parse_samples(os.path.join('samples', args.data))
     elapsed_times = []
     all_start = time.time()
+
     for piece in pieces:
         start_t = time.time()
         print('Evolving for piece: %s' % piece)
@@ -46,8 +99,7 @@ if __name__ == '__main__':
                           'd': switch_mngr.pitch,
                           'ct': switch_mngr.comp_trawler,
                           'rsd': switch_mngr.r_superdiags,
-                          'rrt': switch_mngr.rrt,
-                          'merge': switch_mngr.merge}
+                          'rrt': switch_mngr.rrt}
 
         multi_switches = {'cta': switch_mngr.ct_min_comp,
                           'ctb': switch_mngr.ct_max_comp,
@@ -59,43 +111,11 @@ if __name__ == '__main__':
                               'comlow': switch_mngr.comlow,
                               'cmin': switch_mngr.cmin}
 
-        chromosomes = gh.make_population(onoff_switches, multi_switches)
-        for member in chromosomes:
-            params = [member['recalg'],
-                      member['d'],
-                      member['rrt'],
-                      member['merge']]
-            if member['ct'] != '':
-                params.extend([member['ct'],
-                               switch_mngr.ct_min_comp_prefix,
-                               member['cta'],
-                               switch_mngr.ct_max_comp_prefix,
-                               member['ctb']
-                               ])
-            if member['rsd'] != '':
-                params.extend([member['rsd'],
-                               switch_mngr.r_count_prefix,
-                               member['r']])
+        artificially_selected = []
+        chromosomes = gh.make_population(onoff_switches, multi_switches, population_size)
 
-            call_args = [switch_mngr.algorithm_prefix,
-                         switch_mngr.algorithm,
-                         switch_mngr.input_file_prefix,
-                         switch_mngr.input_file]
+        param_fitness_dict = get_fitness_for_generation(chromosomes)
 
-            call_args.extend(params)
-            filtered_call_args = []
-            for param in call_args:
-                if param != '':
-                    filtered_call_args.append(param)
-            print((len(filtered_call_args)))
-            print('<'*100)
-            caller = JarCall('omnisia.jar')
-            fitness = caller.make_call(filtered_call_args)
-            # break
-        # <<<<<
-            elapsed_t = time.time() - start_t
-            elapsed_times.append(elapsed_t)
-        #   break
     print('\n')
     print('#' * 50)
     print('#' * 50, '\n')
