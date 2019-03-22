@@ -2,6 +2,7 @@ import argparse
 import numpy as np
 import os
 import pprint
+import shutil
 import time
 
 import gene_handler as gh
@@ -18,24 +19,27 @@ def read_compression_from_file(f_path):
     with open(f_path) as f:
         for line in f:
             if 'compressionRatio' in line:
-                return line
+                cr_str = line.split(' ')[1]
+                cr_float = float(cr_str)
+                print(cr_float)
+                return cr_float
 
 
-def get_path_for_results(base_path, piece, algorithm):
+def get_path_for_results(base_path, algorithm):
     extension = extension_map[algorithm]
-    print(extension)
+    # print(extension)
     for item in os.listdir(base_path):
         new_path = os.path.join(base_path, item)
         if os.path.isdir(new_path):
             for file in os.listdir(new_path):
                 file_path = os.path.join(new_path, file)
-                print(os.path.splitext(file)[1])
+                # print(os.path.splitext(file)[1])
                 if extension == os.path.splitext(file)[1]:
                     compression_ratio = read_compression_from_file(file_path)
+                    shutil.rmtree(new_path)
                     # exit(417)
                     return compression_ratio
-                exit(999)
-
+            exit(999)
 
 
 def parse_samples(path=''):
@@ -48,6 +52,8 @@ def parse_samples(path=''):
 
 def get_fitness_for_generation(chromosomes, folder, piece, algo):
     param_fitnesses = {}
+    param_table = {}
+    table_idx = 0
     for member in chromosomes:
         params = [member['d'],
                   member['rrt']]
@@ -75,6 +81,20 @@ def get_fitness_for_generation(chromosomes, folder, piece, algo):
                            '',  # r_count_prefix
                            ''])  # r
 
+        if algo == 'Forth':
+            forth_params = [switch_mngr.crlow_prefix,
+                            member['crlow'],
+                            switch_mngr.crhi_1,
+                            switch_mngr.crhi_2,
+                            switch_mngr.comlow_prefix,
+                            member['comlow'],
+                            switch_mngr.comhi_1,
+                            switch_mngr.comhi_2,
+                            switch_mngr.cmin_prefix,
+                            member['cmin'],
+                            member['bbcomp']]
+            params.extend(forth_params)
+
         call_args = [switch_mngr.algorithm_prefix,
                      switch_mngr.algorithm,
                      switch_mngr.recursia,
@@ -83,6 +103,7 @@ def get_fitness_for_generation(chromosomes, folder, piece, algo):
                      switch_mngr.input_file]
 
         call_args.extend(params)
+
         filtered_call_args = []
         for param in call_args:
             if param != '':
@@ -92,10 +113,15 @@ def get_fitness_for_generation(chromosomes, folder, piece, algo):
         caller = JarCall('omnisia3.jar')
         caller.make_call(filtered_call_args)
 
-        compression_path = get_path_for_results(folder, piece, algo)
-        # param_fitnesses[params] = fitness
-    pprint.pprint(param_fitnesses)
-    return param_fitnesses
+        compression_ratio = get_path_for_results(folder, algo)
+
+        param_table[table_idx] = params
+        param_fitnesses[table_idx] = compression_ratio
+        table_idx += 1
+    pprint.pprint(sorted(param_fitnesses.values()))
+    # pprint.pprint(param_table)
+    exit(417)
+    return param_fitnesses, param_table
 
 
 def get_compression_from_output(file=''):
@@ -110,13 +136,15 @@ if __name__ == '__main__':
                         help="Base algorithm to start the evolution with.")
     parser.add_argument("--data", type=str, default="Fugues",
                         help="Base algorithm to start the evolution with.")
-    # parser.add_argument("--port", type=int, default=9559,
-    #                     help="Naoqi port number")
+    parser.add_argument("--pop", type=int, default=50,
+                        help="Population size")
+    parser.add_argument("--gen", type=int, default=100,
+                        help="Generation count")
     # parser.add_argument("--plot", action="store_true",
     #                     help="Plotting recorded variable lists")
     args = parser.parse_args()
 
-    population_size = 50
+    population_size = args.pop
     folder_path = os.path.join('samples', args.data)
     pieces = parse_samples(folder_path)
     elapsed_times = []
@@ -143,10 +171,17 @@ if __name__ == '__main__':
             forth_multi_sw = {'crlow': switch_mngr.crlow,
                               'comlow': switch_mngr.comlow,
                               'cmin': switch_mngr.cmin}
+        else:
+            forth_onoff_sw = {}
+            forth_multi_sw = {}
 
         artificially_selected = []
-        chromosomes = gh.make_population(onoff_switches, multi_switches, population_size)
-        param_fitness_dict = get_fitness_for_generation(chromosomes, folder_path, piece, args.base)
+        chromosomes = gh.make_population(onoff_switches, multi_switches, population_size,
+                                         args.base, forth_onoff_sw, forth_multi_sw)
+
+        for generation in range(1, args.gen+1):
+            param_fitness_dict, param_table = get_fitness_for_generation(chromosomes, folder_path, piece, args.base)
+            #save results from fitness gen
 
     print('\n')
     print('#' * 50)

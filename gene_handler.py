@@ -2,7 +2,7 @@ import numpy as np
 import pprint
 
 
-def make_population(onoff_switches, multi_switches, pop_size=100):
+def make_population(onoff_switches, multi_switches, pop_size, algo, forth_onoff, forth_multi):
     population = []
     while len(population) != pop_size:
         chromosome = {}
@@ -19,6 +19,15 @@ def make_population(onoff_switches, multi_switches, pop_size=100):
             i = np.random.random_integers(0, 2)
             chromosome['r'] = multi_switches['r'][i]
 
+        if algo == 'Forth':
+            i = np.random.random_integers(0, 1)
+            chromosome['bbcomp'] = forth_onoff['bbcomp'][i]
+            i = np.random.random_integers(0, 2)
+            chromosome['crlow'] = forth_multi['crlow'][i]
+            i = np.random.random_integers(0, 2)
+            chromosome['comlow'] = forth_multi['comlow'][i]
+            i = np.random.random_integers(0, 3)
+            chromosome['cmin'] = forth_multi['cmin'][i]
         if chromosome not in population:
             population.append(chromosome)
     pprint.pprint(population)
