@@ -30,7 +30,7 @@ def make_population(onoff_switches, multi_switches, pop_size, algo, recalgo, for
             chromosome['comlow'] = forth_multi['comlow'][i]
             i = np.random.random_integers(0, 3)
             chromosome['cmin'] = forth_multi['cmin'][i]
-        if chromosome not in population and retry_count != 25:
+        if chromosome not in population and retry_count != 200:
             population.append(chromosome)
             retry_count = 0
         else:
@@ -54,54 +54,56 @@ def artificial_selection(fitnesses, param_table, select_ratio=0.4):
 
 def mutation(child, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, algo, recalgo):
     mutation_idx = random.randint(0, len(child)-1)
-    if algo == 'Fort' or recalgo == 'Forth':
-        keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r', 'crlow', 'comlow', 'cmin', 'bbcomp']
-    else:
-        keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r']
-    key = keys[mutation_idx]
-    if key in onoff_switches.keys():
-        print('ONOFF KEY %s' % key)
-        i = np.random.random_integers(0, 1)
-        prev_value = child[mutation_idx]
-        child[mutation_idx] = onoff_switches[key][i]
-        # print('Original %s - New %s' % (prev_value, child[mutation_idx]))
-        # if prev_value != child[mutation_idx]:
-        #     print('FILL EXECUTES')
-        #     if child[2] != '':
-        #         i = np.random.random_integers(0, 3)
-        #         child[3] = multi_switches['cta'][i]
-        #         i = np.random.random_integers(0, 2)
-        #         child[4] = multi_switches['ctb'][i]
-        #         print('Filled missing ct >>')
-        #         print(child[2], child[3], child[4])
-        #     if child[5] != '':
-        #         i = np.random.random_integers(0, 2)
-        #         child[6] = multi_switches['r'][i]
-        #         print('Filled missing r >>')
-        #         print(child[5], child[6])
-
-    elif key in multi_switches.keys():
-        if child[2] != '':
-            if mutation_idx == 3:
-                i = np.random.random_integers(0, 3)
-                child[mutation_idx] = multi_switches[key][i]
-            if mutation_idx == 4:
-                i = np.random.random_integers(0, 2)
-                child[mutation_idx] = multi_switches[key][i]
-        if child[5] != '':
-            if mutation_idx == 6:
-                i = np.random.random_integers(0, 2)
-                child[mutation_idx] = multi_switches[key][i]
-    elif key in forth_onoff_sw.keys():
-        i = np.random.random_integers(0, 1)
-        child[mutation_idx] = forth_onoff_sw[key][i]
-    elif key in forth_multi_sw.keys():
-        if key != 'cmin':
-            i = np.random.random_integers(0, 2)
-            child[mutation_idx] = forth_multi_sw[key][i]
+    mutation_chance = 20
+    if np.random.random_integers(1, 100) <= mutation_chance:
+        if algo == 'Fort' or recalgo == 'Forth':
+            keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r', 'crlow', 'comlow', 'cmin', 'bbcomp']
         else:
-            i = np.random.random_integers(0, 3)
-            child[mutation_idx] = forth_multi_sw[key][i]
+            keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r']
+        key = keys[mutation_idx]
+        if key in onoff_switches.keys():
+            print('ONOFF KEY %s' % key)
+            i = np.random.random_integers(0, 1)
+            prev_value = child[mutation_idx]
+            child[mutation_idx] = onoff_switches[key][i]
+            # print('Original %s - New %s' % (prev_value, child[mutation_idx]))
+            # if prev_value != child[mutation_idx]:
+            #     print('FILL EXECUTES')
+            #     if child[2] != '':
+            #         i = np.random.random_integers(0, 3)
+            #         child[3] = multi_switches['cta'][i]
+            #         i = np.random.random_integers(0, 2)
+            #         child[4] = multi_switches['ctb'][i]
+            #         print('Filled missing ct >>')
+            #         print(child[2], child[3], child[4])
+            #     if child[5] != '':
+            #         i = np.random.random_integers(0, 2)
+            #         child[6] = multi_switches['r'][i]
+            #         print('Filled missing r >>')
+            #         print(child[5], child[6])
+
+        elif key in multi_switches.keys():
+            if child[2] != '':
+                if mutation_idx == 3:
+                    i = np.random.random_integers(0, 3)
+                    child[mutation_idx] = multi_switches[key][i]
+                if mutation_idx == 4:
+                    i = np.random.random_integers(0, 2)
+                    child[mutation_idx] = multi_switches[key][i]
+            if child[5] != '':
+                if mutation_idx == 6:
+                    i = np.random.random_integers(0, 2)
+                    child[mutation_idx] = multi_switches[key][i]
+        elif key in forth_onoff_sw.keys():
+            i = np.random.random_integers(0, 1)
+            child[mutation_idx] = forth_onoff_sw[key][i]
+        elif key in forth_multi_sw.keys():
+            if key != 'cmin':
+                i = np.random.random_integers(0, 2)
+                child[mutation_idx] = forth_multi_sw[key][i]
+            else:
+                i = np.random.random_integers(0, 3)
+                child[mutation_idx] = forth_multi_sw[key][i]
     return child
 
 
@@ -218,7 +220,7 @@ def cross_breeding(happy_few, population_size, onoff_switches, multi_switches, f
                 if child not in population and len(population) != population_size:
                     population.append(child)
                     retry_count = 0
-                elif len(population) != population_size and retry_count == 10:
+                elif len(population) != population_size and retry_count == 100:
                     population.append(child)
                     retry_count = 0
                 elif child in population and len(population) != population_size:
