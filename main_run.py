@@ -1,4 +1,6 @@
 import argparse
+import csv
+from datetime import datetime
 import numpy as np
 import os
 import pprint
@@ -13,6 +15,29 @@ extension_map = {'COSIATEC': '.cos',
                  'SIATECCompress': '.SIATECCompress',
                  'Forth': '.Forth',
                  'RecurSIA': '.RecurSIA'}
+
+
+def save_param_fitnesses(path_fitness, gen, param_fitness_dict, param_table):
+    if not os.path.exists(path_fitness):
+        with open(path_fitness, 'w', newline='') as file:
+            writer = csv.writer(file, delimiter=';')
+            header = ['generation', 'idx', 'fitness']
+            for x in range(0, len(param_table[0])):
+                header.append('param%d' % x)
+            writer.writerow(header)
+            for idx, fit in enumerate(param_fitness_dict):
+                line = [str(gen), str(idx), str(fit)]
+                for param in param_table[idx]:
+                    line.append(param)
+                writer.writerow(line)
+    else:
+        with open(path_fitness, 'a', newline='') as file:
+            writer = csv.writer(file, delimiter=';')
+            for idx, fit in enumerate(param_fitness_dict):
+                line = [str(gen), str(idx), str(fit)]
+                for param in param_table[idx]:
+                    line.append(param)
+                writer.writerow(line)
 
 
 def read_compression_from_file(f_path):
@@ -50,8 +75,8 @@ def parse_samples(path=''):
     return pieces
 
 
-def get_fitness_for_generation(chromosomes, folder, piece, algo):
-    param_fitnesses = {}
+def get_fitness_for_generation(chromosomes, folder, piece, algo, recalgo):
+    param_fitnesses = []
     param_table = {}
     table_idx = 0
     for member in chromosomes:
@@ -81,7 +106,7 @@ def get_fitness_for_generation(chromosomes, folder, piece, algo):
                            '',  # r_count_prefix
                            ''])  # r
 
-        if algo == 'Forth':
+        if algo == 'Forth' or recalgo == 'Forth':
             forth_params = [switch_mngr.crlow_prefix,
                             member['crlow'],
                             switch_mngr.crhi_1,
@@ -116,16 +141,12 @@ def get_fitness_for_generation(chromosomes, folder, piece, algo):
         compression_ratio = get_path_for_results(folder, algo)
 
         param_table[table_idx] = params
-        param_fitnesses[table_idx] = compression_ratio
+        param_fitnesses.append(compression_ratio)
         table_idx += 1
-    pprint.pprint(sorted(param_fitnesses.values()))
+    # pprint.pprint(param_fitnesses)
     # pprint.pprint(param_table)
-    exit(417)
+    # exit(417)
     return param_fitnesses, param_table
-
-
-def get_compression_from_output(file=''):
-    pass
 
 
 if __name__ == '__main__':
@@ -140,6 +161,8 @@ if __name__ == '__main__':
                         help="Population size")
     parser.add_argument("--gen", type=int, default=100,
                         help="Generation count")
+    parser.add_argument("--sel", type=float, default="0.4",
+                        help="Artificial selection cutoff on each generation.")
     # parser.add_argument("--plot", action="store_true",
     #                     help="Plotting recorded variable lists")
     args = parser.parse_args()
@@ -166,7 +189,7 @@ if __name__ == '__main__':
                           'ctb': switch_mngr.ct_max_comp,
                           'r': switch_mngr.r_count}
 
-        if args.base == 'Forth':
+        if args.base == 'Forth' or args.recalg == 'Forth':
             forth_onoff_sw = {'bbcomp': switch_mngr.bbcomp}
             forth_multi_sw = {'crlow': switch_mngr.crlow,
                               'comlow': switch_mngr.comlow,
@@ -177,11 +200,16 @@ if __name__ == '__main__':
 
         artificially_selected = []
         chromosomes = gh.make_population(onoff_switches, multi_switches, population_size,
-                                         args.base, forth_onoff_sw, forth_multi_sw)
-
+                                         args.base, args.recalg, forth_onoff_sw, forth_multi_sw)
+        ts = datetime.now().strftime('%d%m%y%H%M%S')
+        pn = os.path.basename(piece).split('.')[0]
         for generation in range(1, args.gen+1):
-            param_fitness_dict, param_table = get_fitness_for_generation(chromosomes, folder_path, piece, args.base)
-            #save results from fitness gen
+            param_fitness_dict, param_table = get_fitness_for_generation(chromosomes, folder_path, piece, args.base, args.recalg)
+            path_fitness = '%s%s-%s-%s-%s.csv' % (args.base, args.recalg, args.data, pn, ts)
+            save_param_fitnesses(path_fitness, generation, param_fitness_dict, param_table)
+            happy_few = gh.artificial_selection(param_fitness_dict, param_table, args.sel)
+            chromosomes = gh.cross_breeding(happy_few, population_size, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, args.base, args.recalg)
+            # exit(417)
 
     print('\n')
     print('#' * 50)
