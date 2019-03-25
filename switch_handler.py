@@ -26,7 +26,7 @@ class Switches:
 
         self.rrt = ['', '-rrt']  # -rrt
 
-        if self.algorithm == 'Forth':
+        if self.algorithm == 'Forth' or self.recalg_alg == 'Forth':
             self.crlow_prefix = '-crlow'
             self.crlow = ['0.2', '0.6', '0.9']  # -crlow
 

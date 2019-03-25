@@ -17,6 +17,29 @@ extension_map = {'COSIATEC': '.cos',
                  'RecurSIA': '.RecurSIA'}
 
 
+def log_times(path, t_type, time, gen, idx):
+    if not os.path.exists(path):
+        with open(path, 'w', newline='') as file:
+            writer = csv.writer(file, delimiter=';')
+            header = ['timed', 'gen', 'idx', 'min', 'sec']
+            writer.writerow(header)
+            c_min, c_sec = divmod(time, 60)
+
+            c_min_str = '%02d' % c_min
+            c_sec_str = '%.3f' % c_sec
+            line = [t_type, gen, idx, c_min_str, c_sec_str]
+            writer.writerow(line)
+    else:
+        with open(path, 'a', newline='') as file:
+            writer = csv.writer(file, delimiter=';')
+            c_min, c_sec = divmod(time, 60)
+
+            c_min_str = '%02d' % c_min
+            c_sec_str = '%.3f' % c_sec
+            line = [t_type, gen, idx, c_min_str, c_sec_str]
+            writer.writerow(line)
+
+
 def save_param_fitnesses(path_fitness, gen, param_fitness_dict, param_table):
     if not os.path.exists(path_fitness):
         with open(path_fitness, 'w', newline='') as file:
@@ -75,11 +98,12 @@ def parse_samples(path=''):
     return pieces
 
 
-def get_fitness_for_generation(chromosomes, folder, piece, algo, recalgo):
+def get_fitness_for_generation(chromosomes, folder, piece, algo, recalgo, path_time_log, gen):
     param_fitnesses = []
     param_table = {}
     table_idx = 0
     for member in chromosomes:
+        start_t_chrom = time.time()
         params = [member['d'],
                   member['rrt']]
 
@@ -143,6 +167,8 @@ def get_fitness_for_generation(chromosomes, folder, piece, algo, recalgo):
         param_table[table_idx] = params
         param_fitnesses.append(compression_ratio)
         table_idx += 1
+        elapsed_time_chrom = time.time()-start_t_chrom
+        log_times(path_time_log, 'chrom', elapsed_time_chrom, gen, str(table_idx-1))
     # pprint.pprint(param_fitnesses)
     # pprint.pprint(param_table)
     # exit(417)
@@ -174,7 +200,7 @@ if __name__ == '__main__':
     all_start = time.time()
 
     for piece in pieces:
-        start_t = time.time()
+        start_t_piece = time.time()
         print('Evolving for piece: %s' % piece)
         print('#' * 50)
         # >>>>>
@@ -203,14 +229,21 @@ if __name__ == '__main__':
                                          args.base, args.recalg, forth_onoff_sw, forth_multi_sw)
         ts = datetime.now().strftime('%d%m%y%H%M%S')
         pn = os.path.basename(piece).split('.')[0]
+        path_time_log = '%s%s-%s-%s-%s.log' % (args.base, args.recalg, args.data, pn, ts)
         for generation in range(1, args.gen+1):
-            param_fitness_dict, param_table = get_fitness_for_generation(chromosomes, folder_path, piece, args.base, args.recalg)
+            start_t_gen = time.time()
+
+            param_fitness_dict, param_table = get_fitness_for_generation(chromosomes, folder_path, piece, args.base, args.recalg, path_time_log, str(generation))
             path_fitness = '%s%s-%s-%s-%s.csv' % (args.base, args.recalg, args.data, pn, ts)
             save_param_fitnesses(path_fitness, generation, param_fitness_dict, param_table)
             happy_few = gh.artificial_selection(param_fitness_dict, param_table, args.sel)
             chromosomes = gh.cross_breeding(happy_few, population_size, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, args.base, args.recalg)
+            elapsed_time_gen = time.time()-start_t_gen
+            log_times(path_time_log, 'gen', elapsed_time_gen, str(generation), '')
             # exit(417)
-
+        elapsed_time_piece = time.time()-start_t_piece
+        log_times(path_time_log, 'piece', elapsed_time_piece, '', '')
+        exit(417)
     print('\n')
     print('#' * 50)
     print('#' * 50, '\n')
