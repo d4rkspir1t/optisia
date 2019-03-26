@@ -240,7 +240,6 @@ if __name__ == '__main__':
             chromosomes = gh.cross_breeding(happy_few, population_size, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, args.base, args.recalg)
             elapsed_time_gen = time.time()-start_t_gen
             log_times(path_time_log, 'gen', elapsed_time_gen, str(generation), '')
-            # exit(417)
         elapsed_time_piece = time.time()-start_t_piece
         log_times(path_time_log, 'piece', elapsed_time_piece, '', '')
         exit(417)
