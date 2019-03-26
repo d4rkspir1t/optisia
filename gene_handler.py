@@ -30,7 +30,7 @@ def make_population(onoff_switches, multi_switches, pop_size, algo, recalgo, for
             chromosome['comlow'] = forth_multi['comlow'][i]
             i = np.random.random_integers(0, 3)
             chromosome['cmin'] = forth_multi['cmin'][i]
-        if chromosome not in population and retry_count != 200:
+        if chromosome not in population and retry_count != 50:
             population.append(chromosome)
             retry_count = 0
         else:
@@ -54,7 +54,7 @@ def artificial_selection(fitnesses, param_table, select_ratio=0.4):
 
 def mutation(child, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, algo, recalgo):
     mutation_idx = random.randint(0, len(child)-1)
-    mutation_chance = 50
+    mutation_chance = 101  # always mutates something
     if np.random.random_integers(1, 100) <= mutation_chance:
         if algo == 'Fort' or recalgo == 'Forth':
             keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r', 'crlow', 'comlow', 'cmin', 'bbcomp']
@@ -220,7 +220,7 @@ def cross_breeding(happy_few, population_size, onoff_switches, multi_switches, f
                 if child not in population and len(population) != population_size:
                     population.append(child)
                     retry_count = 0
-                elif len(population) != population_size and retry_count == 100:
+                elif len(population) != population_size and retry_count == 25:
                     population.append(child)
                     retry_count = 0
                 elif child in population and len(population) != population_size:

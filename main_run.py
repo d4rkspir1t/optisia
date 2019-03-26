@@ -175,6 +175,16 @@ def get_fitness_for_generation(chromosomes, folder, piece, algo, recalgo, path_t
     return param_fitnesses, param_table
 
 
+def check_stagnation(param_fitness_dict, best_fitness):
+    stagnating = True
+    for fitness in param_fitness_dict:
+        if fitness > best_fitness:
+            best_fitness = fitness
+            stagnating = False
+            break
+    return best_fitness, stagnating
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--base", type=str, default="COSIATEC",
@@ -186,6 +196,10 @@ if __name__ == '__main__':
     parser.add_argument("--pop", type=int, default=50,
                         help="Population size")
     parser.add_argument("--gen", type=int, default=100,
+                        help="Generation count")
+    parser.add_argument("--sta", type=int, default=50,
+                        help="Generation count")
+    parser.add_argument("--stac", type=int, default=30,
                         help="Generation count")
     parser.add_argument("--sel", type=float, default="0.4",
                         help="Artificial selection cutoff on each generation.")
@@ -229,20 +243,30 @@ if __name__ == '__main__':
                                          args.base, args.recalg, forth_onoff_sw, forth_multi_sw)
         ts = datetime.now().strftime('%d%m%y%H%M%S')
         pn = os.path.basename(piece).split('.')[0]
-        path_time_log = '%s%s-%s-%s-%s.log' % (args.base, args.recalg, args.data, pn, ts)
+        path_time_log_file = '%s%s-%s-%s-%s.log' % (args.base, args.recalg, args.data, pn, ts)
+        path_time_log = os.path.join('results', path_time_log_file)
+        path_fitness_file = '%s%s-%s-%s-%s.csv' % (args.base, args.recalg, args.data, pn, ts)
+        path_fitness = os.path.join('results', path_fitness_file)
+        best_fitness = 0
+        stagnating_for_count = 0
         for generation in range(1, args.gen+1):
             start_t_gen = time.time()
 
             param_fitness_dict, param_table = get_fitness_for_generation(chromosomes, folder_path, piece, args.base, args.recalg, path_time_log, str(generation))
-            path_fitness = '%s%s-%s-%s-%s.csv' % (args.base, args.recalg, args.data, pn, ts)
             save_param_fitnesses(path_fitness, generation, param_fitness_dict, param_table)
             happy_few = gh.artificial_selection(param_fitness_dict, param_table, args.sel)
             chromosomes = gh.cross_breeding(happy_few, population_size, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, args.base, args.recalg)
             elapsed_time_gen = time.time()-start_t_gen
             log_times(path_time_log, 'gen', elapsed_time_gen, str(generation), '')
+            best_fitness, stagnating_pop = check_stagnation(param_fitness_dict, best_fitness)
+            if stagnating_pop and generation > args.sta:
+                if stagnating_for_count < args.stac:
+                    stagnating_for_count += 1
+                else:
+                    break
         elapsed_time_piece = time.time()-start_t_piece
         log_times(path_time_log, 'piece', elapsed_time_piece, '', '')
-        exit(417)
+        # exit(417)
     print('\n')
     print('#' * 50)
     print('#' * 50, '\n')
