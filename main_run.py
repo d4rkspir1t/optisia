@@ -16,6 +16,9 @@ extension_map = {'COSIATEC': '.cos',
                  'Forth': '.Forth',
                  'RecurSIA': '.RecurSIA'}
 
+tested_params = []
+tested_param_compression = {}
+
 
 def log_times(path, t_type, time, gen, idx):
     if not os.path.exists(path):
@@ -160,9 +163,16 @@ def get_fitness_for_generation(chromosomes, folder, piece, algo, recalgo, path_t
         print((len(filtered_call_args)))
         print('<' * 100)
         caller = JarCall('omnisia3.jar')
-        caller.make_call(filtered_call_args)
+        if filtered_call_args not in tested_params:
+            tested_params.append(filtered_call_args)
+            caller.make_call(filtered_call_args)
 
-        compression_ratio = get_path_for_results(folder, algo)
+            compression_ratio = get_path_for_results(folder, algo)
+            tested_param_compression[tested_params.index(filtered_call_args)] = compression_ratio
+            print('CACHING CALL AND CALCULATED COMPRESSION RATIO')
+        else:
+            print('READING CACHED CR. INSTEAD')
+            compression_ratio = tested_param_compression[tested_params.index(filtered_call_args)]
 
         param_table[table_idx] = params
         param_fitnesses.append(compression_ratio)
@@ -263,9 +273,11 @@ if __name__ == '__main__':
                 if stagnating_for_count < args.stac:
                     stagnating_for_count += 1
                 else:
+                    print('POPULATION CEASED TO GET BETTER')
                     break
         elapsed_time_piece = time.time()-start_t_piece
         log_times(path_time_log, 'piece', elapsed_time_piece, '', '')
+        print('\n'*20)
         # exit(417)
     print('\n')
     print('#' * 50)

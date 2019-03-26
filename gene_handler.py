@@ -56,7 +56,7 @@ def mutation(child, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_
     mutation_idx = random.randint(0, len(child)-1)
     mutation_chance = 101  # always mutates something
     if np.random.random_integers(1, 100) <= mutation_chance:
-        if algo == 'Fort' or recalgo == 'Forth':
+        if algo == 'Forth' or recalgo == 'Forth':
             keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r', 'crlow', 'comlow', 'cmin', 'bbcomp']
         else:
             keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r']
@@ -108,7 +108,7 @@ def mutation(child, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_
 
 
 def breed(male_mrna, female_mrna, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, algo, recalgo):
-    if algo == 'Fort' or recalgo == 'Forth':
+    if algo == 'Forth' or recalgo == 'Forth':
         male_trna = [male_mrna[0],
                      male_mrna[1],
                      male_mrna[2],
@@ -155,7 +155,7 @@ def breed(male_mrna, female_mrna, onoff_switches, multi_switches, forth_onoff_sw
         # mutate child
         mut_child = mutation(child, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, algo, recalgo)
         # make FULL param dict out of it
-        if algo == 'Fort' or recalgo == 'Forth':
+        if algo == 'Forth' or recalgo == 'Forth':
             keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r', 'crlow', 'comlow', 'cmin', 'bbcomp']
         else:
             keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r']
@@ -173,7 +173,7 @@ def cross_breeding(happy_few, population_size, onoff_switches, multi_switches, f
     print('P count %d, need %d' % (parent_count, need))
     population = []
     for idx, params in enumerate(happy_few.values()):
-        if algo == 'Fort' or recalgo == 'Forth':
+        if algo == 'Forth' or recalgo == 'Forth':
             keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r', 'crlow', 'comlow', 'cmin', 'bbcomp']
             real_params = [params[0],
                            params[1],
