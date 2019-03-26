@@ -278,6 +278,8 @@ if __name__ == '__main__':
         elapsed_time_piece = time.time()-start_t_piece
         log_times(path_time_log, 'piece', elapsed_time_piece, '', '')
         print('\n'*20)
+        tested_params = []
+        tested_param_compression = {}
         # exit(417)
     print('\n')
     print('#' * 50)
