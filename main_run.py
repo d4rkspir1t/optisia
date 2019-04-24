@@ -280,6 +280,7 @@ if __name__ == '__main__':
         print('\n'*20)
         tested_params = []
         tested_param_compression = {}
+        elapsed_times.append(elapsed_time_piece)
         # exit(417)
     print('\n')
     print('#' * 50)
