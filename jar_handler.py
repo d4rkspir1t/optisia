@@ -8,7 +8,7 @@ class JarCall:
         self.base_call = ['java', '-jar']
         self.jar_path = path
 
-    def make_call(self, params=[]):
+    def make_call(self, params):
         call = self.base_call
         call.append(self.jar_path)
         call.extend(params)
@@ -17,10 +17,3 @@ class JarCall:
         print('-'*50, '\n')
 
         subprocess.call(call, stdout=None, stderr=None)
-        # output = subprocess.call(call, stdout=None, stderr=None)
-        # if output > 0:
-        #     print('Warning, result was %s ' % output)
-
-
-# caller = JarCall(path='omnisia.jar')
-# caller.make_call(['--help'])

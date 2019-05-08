@@ -66,21 +66,6 @@ def mutation(child, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_
             i = np.random.random_integers(0, 1)
             prev_value = child[mutation_idx]
             child[mutation_idx] = onoff_switches[key][i]
-            # print('Original %s - New %s' % (prev_value, child[mutation_idx]))
-            # if prev_value != child[mutation_idx]:
-            #     print('FILL EXECUTES')
-            #     if child[2] != '':
-            #         i = np.random.random_integers(0, 3)
-            #         child[3] = multi_switches['cta'][i]
-            #         i = np.random.random_integers(0, 2)
-            #         child[4] = multi_switches['ctb'][i]
-            #         print('Filled missing ct >>')
-            #         print(child[2], child[3], child[4])
-            #     if child[5] != '':
-            #         i = np.random.random_integers(0, 2)
-            #         child[6] = multi_switches['r'][i]
-            #         print('Filled missing r >>')
-            #         print(child[5], child[6])
 
         elif key in multi_switches.keys():
             if child[2] != '':
@@ -109,43 +94,13 @@ def mutation(child, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_
 
 def breed(male_mrna, female_mrna, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, algo, recalgo):
     if algo == 'Forth' or recalgo == 'Forth':
-        male_trna = [male_mrna[0],
-                     male_mrna[1],
-                     male_mrna[2],
-                     male_mrna[4],
-                     male_mrna[6],
-                     male_mrna[7],
-                     male_mrna[9],
-                     male_mrna[11],
-                     male_mrna[15],
-                     male_mrna[19],
-                     male_mrna[20]]
-        female_trna = [female_mrna[0],
-                       female_mrna[1],
-                       female_mrna[2],
-                       female_mrna[4],
-                       female_mrna[6],
-                       female_mrna[7],
-                       female_mrna[9],
-                       female_mrna[11],
-                       female_mrna[15],
-                       female_mrna[19],
-                       female_mrna[20]]
+        idx_for_trna = [0, 1, 2, 4, 6, 7, 9, 11, 15, 19, 20]
     else:
-        male_trna = [male_mrna[0],
-                     male_mrna[1],
-                     male_mrna[2],
-                     male_mrna[4],
-                     male_mrna[6],
-                     male_mrna[7],
-                     male_mrna[9]]
-        female_trna = [female_mrna[0],
-                       female_mrna[1],
-                       female_mrna[2],
-                       female_mrna[4],
-                       female_mrna[6],
-                       female_mrna[7],
-                       female_mrna[9]]
+        idx_for_trna = [0, 1, 2, 4, 6, 7, 9]
+
+    male_trna = [male_mrna[idx] for idx in idx_for_trna]
+    female_trna = [female_mrna[idx] for idx in idx_for_trna]
+
     children = []
     for _ in range(2):
         child = []
@@ -171,61 +126,50 @@ def cross_breeding(happy_few, population_size, onoff_switches, multi_switches, f
     need = population_size-parent_count
     print(happy_few)
     print('P count %d, need %d' % (parent_count, need))
+    
     population = []
     for idx, params in enumerate(happy_few.values()):
         if algo == 'Forth' or recalgo == 'Forth':
             keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r', 'crlow', 'comlow', 'cmin', 'bbcomp']
-            real_params = [params[0],
-                           params[1],
-                           params[2],
-                           params[4],
-                           params[6],
-                           params[7],
-                           params[9],
-                           params[11],
-                           params[15],
-                           params[19],
-                           params[20]]
+            idx_for_params = [0, 1, 2, 4, 6, 7, 9, 11, 15, 19, 20]
         else:
             keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r']
-            real_params = [params[0],
-                           params[1],
-                           params[2],
-                           params[4],
-                           params[6],
-                           params[7],
-                           params[9]]
+            idx_for_params = [0, 1, 2, 4, 6, 7, 9]
+        real_params = [params[idx] for idx in idx_for_params]
+
         member = {}
         for idx, key in enumerate(keys):
             member[key] = real_params[idx]
         population.append(member)
     print('Parents added: pop - %d' % len(population))
     retry_count = 0
+
     while len(population) != population_size:
         male = random.randint(0, parent_count-1)
         female = random.randint(0, parent_count-1)
         print('Parents selected')
+
         if male == female:
             if male != 0:
                 male = male-1
             else:
                 male = male+1
-        if male != female:
-            male_key = list(happy_few.keys())[male]
-            female_key = list(happy_few.keys())[female]
-            male_mrna = happy_few[male_key]
-            female_mrna = happy_few[female_key]
-            children = breed(male_mrna, female_mrna, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, algo, recalgo)
-            for child in children:
-                if child not in population and len(population) != population_size:
-                    population.append(child)
-                    retry_count = 0
-                elif len(population) != population_size and retry_count == 25:
-                    population.append(child)
-                    retry_count = 0
-                elif child in population and len(population) != population_size:
-                    retry_count += 1
-            print('Population length %d' % len(population))
+
+        male_key = list(happy_few.keys())[male]
+        female_key = list(happy_few.keys())[female]
+        male_mrna = happy_few[male_key]
+        female_mrna = happy_few[female_key]
+        children = breed(male_mrna, female_mrna, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, algo, recalgo)
+        for child in children:
+            if child not in population and len(population) != population_size:
+                population.append(child)
+                retry_count = 0
+            elif len(population) != population_size and retry_count == 25:
+                population.append(child)
+                retry_count = 0
+            elif child in population and len(population) != population_size:
+                retry_count += 1
+        print('Population length %d' % len(population))
     for member in population:
         if member['rsd'] == '-rsd' and member['r'] == '':
             i = np.random.random_integers(0, 2)
