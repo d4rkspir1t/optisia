@@ -16,13 +16,13 @@ class Switches:
 
         self.comp_trawler = ['', '-ct']  # -ct
         self.ct_min_comp_prefix = '-cta'
-        self.ct_min_comp = ['0.0', '0.33', '0.67', '1.0']  # -cta
+        self.ct_min_comp = ['0.0', '0.33', '0.67', '1.0']  # -cta more than 0.5
         self.ct_max_comp_prefix = '-ctb'
-        self.ct_max_comp = ['1', '3', '10']  # -ctb
+        self.ct_max_comp = ['1', '3', '10']  # -ctb 3-10
 
         self.r_superdiags = ['', '-rsd']  # -rsd
         self.r_count_prefix = '-r'
-        self.r_count = ['1', '5', '10']  # -r
+        self.r_count = ['1', '5', '10']  # -r not too high
 
         self.rrt = ['', '-rrt']  # -rrt
 
@@ -40,6 +40,8 @@ class Switches:
             self.comhi_2 = '1.0'  # -comhi
 
             self.cmin_prefix = '-cmin'
-            self.cmin = ['0', '5', '15', '30']  # -cmin
+            self.cmin = ['0', '5', '15', '30']  # -cmin 5<
 
             self.bbcomp = ['', '-bbcomp']  # -bbcomp
+
+# topn = 5

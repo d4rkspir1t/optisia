@@ -126,7 +126,7 @@ def cross_breeding(happy_few, population_size, onoff_switches, multi_switches, f
     need = population_size-parent_count
     print(happy_few)
     print('P count %d, need %d' % (parent_count, need))
-    
+
     population = []
     for idx, params in enumerate(happy_few.values()):
         if algo == 'Forth' or recalgo == 'Forth':
