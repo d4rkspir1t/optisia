@@ -13,9 +13,9 @@ def make_population(onoff_switches, multi_switches, pop_size, algo, recalgo, for
             chromosome[key] = switch[rng[idx]]
 
         if chromosome['ct'] != '':
-            i = np.random.random_integers(0, 3)
-            chromosome['cta'] = multi_switches['cta'][i]
             i = np.random.random_integers(0, 2)
+            chromosome['cta'] = multi_switches['cta'][i]
+            i = np.random.random_integers(0, 3)
             chromosome['ctb'] = multi_switches['ctb'][i]
         if chromosome['rsd'] != '':
             i = np.random.random_integers(0, 2)
@@ -28,7 +28,7 @@ def make_population(onoff_switches, multi_switches, pop_size, algo, recalgo, for
             chromosome['crlow'] = forth_multi['crlow'][i]
             i = np.random.random_integers(0, 2)
             chromosome['comlow'] = forth_multi['comlow'][i]
-            i = np.random.random_integers(0, 3)
+            i = np.random.random_integers(0, 2)
             chromosome['cmin'] = forth_multi['cmin'][i]
         if chromosome not in population and retry_count != 50:
             population.append(chromosome)
@@ -41,7 +41,7 @@ def make_population(onoff_switches, multi_switches, pop_size, algo, recalgo, for
     return population
 
 
-def artificial_selection(fitnesses, param_table, select_ratio=0.4):
+def artificial_selection(fitnesses, param_table, select_ratio=0.34):
     cut = int(len(fitnesses)*select_ratio)
     we_happy_few = [i[0] for i in sorted(enumerate(fitnesses), key=lambda x:x[1])][-cut:]
     kept_params = {}
@@ -54,7 +54,7 @@ def artificial_selection(fitnesses, param_table, select_ratio=0.4):
 
 def mutation(child, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, algo, recalgo):
     mutation_idx = random.randint(0, len(child)-1)
-    mutation_chance = 101  # always mutates something
+    mutation_chance = 20  # TODO: make it a variable to control from outside of this function
     if np.random.random_integers(1, 100) <= mutation_chance:
         if algo == 'Forth' or recalgo == 'Forth':
             keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r', 'crlow', 'comlow', 'cmin', 'bbcomp']
@@ -70,10 +70,10 @@ def mutation(child, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_
         elif key in multi_switches.keys():
             if child[2] != '':
                 if mutation_idx == 3:
-                    i = np.random.random_integers(0, 3)
+                    i = np.random.random_integers(0, 2)
                     child[mutation_idx] = multi_switches[key][i]
                 if mutation_idx == 4:
-                    i = np.random.random_integers(0, 2)
+                    i = np.random.random_integers(0, 3)
                     child[mutation_idx] = multi_switches[key][i]
             if child[5] != '':
                 if mutation_idx == 6:
@@ -83,11 +83,7 @@ def mutation(child, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_
             i = np.random.random_integers(0, 1)
             child[mutation_idx] = forth_onoff_sw[key][i]
         elif key in forth_multi_sw.keys():
-            if key != 'cmin':
                 i = np.random.random_integers(0, 2)
-                child[mutation_idx] = forth_multi_sw[key][i]
-            else:
-                i = np.random.random_integers(0, 3)
                 child[mutation_idx] = forth_multi_sw[key][i]
     return child
 
@@ -102,7 +98,7 @@ def breed(male_mrna, female_mrna, onoff_switches, multi_switches, forth_onoff_sw
     female_trna = [female_mrna[idx] for idx in idx_for_trna]
 
     children = []
-    for _ in range(2):
+    for _ in range(4):  # TODO: make it a variable that depends on the needed amount and the starting parent count
         child = []
         for param in range(0, len(male_trna)):
             child.append(random.choice([female_trna[param],
@@ -144,7 +140,8 @@ def cross_breeding(happy_few, population_size, onoff_switches, multi_switches, f
     print('Parents added: pop - %d' % len(population))
     retry_count = 0
 
-    while len(population) != population_size:
+    while len(population) != population_size and parent_count >= 2:
+        remove_parents = False
         male = random.randint(0, parent_count-1)
         female = random.randint(0, parent_count-1)
         print('Parents selected')
@@ -161,14 +158,13 @@ def cross_breeding(happy_few, population_size, onoff_switches, multi_switches, f
         female_mrna = happy_few[female_key]
         children = breed(male_mrna, female_mrna, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, algo, recalgo)
         for child in children:
-            if child not in population and len(population) != population_size:
+            if len(population) != population_size:
                 population.append(child)
-                retry_count = 0
-            elif len(population) != population_size and retry_count == 25:
-                population.append(child)
-                retry_count = 0
-            elif child in population and len(population) != population_size:
-                retry_count += 1
+                remove_parents = True
+        if remove_parents:
+            del happy_few[male_key]
+            del happy_few[female_key]
+            parent_count = len(happy_few.values())
         print('Population length %d' % len(population))
     for member in population:
         if member['rsd'] == '-rsd' and member['r'] == '':
@@ -176,11 +172,11 @@ def cross_breeding(happy_few, population_size, onoff_switches, multi_switches, f
             member['r'] = multi_switches['r'][i]
             print('Preventive R generation')
         if member['ct'] == '-ct' and member['cta'] == '':
-            i = np.random.random_integers(0, 3)
+            i = np.random.random_integers(0, 2)
             member['cta'] = multi_switches['cta'][i]
             print('Preventive CTA generation')
         if member['ct'] == '-ct' and member['ctb'] == '':
-            i = np.random.random_integers(0, 2)
+            i = np.random.random_integers(0, 3)
             member['ctb'] = multi_switches['ctb'][i]
             print('Preventive CTB generation')
     return population

@@ -122,7 +122,7 @@ if __name__ == '__main__':
                         help="Generation count")
     parser.add_argument("--stac", type=int, default=30,
                         help="Generation count")
-    parser.add_argument("--sel", type=float, default="0.4",
+    parser.add_argument("--sel", type=float, default="0.34",
                         help="Artificial selection cutoff on each generation.")
     args = parser.parse_args()
 
