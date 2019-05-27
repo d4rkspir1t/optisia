@@ -54,7 +54,8 @@ def artificial_selection(fitnesses, param_table, select_ratio=0.34):
 
 def mutation(child, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, algo, recalgo):
     mutation_idx = random.randint(0, len(child)-1)
-    mutation_chance = 20  # TODO: make it a variable to control from outside of this function
+    mutation_chance = 50  # TODO: make it a variable to control from outside of this function
+    # mutation_chance = 1/len(keys)*100
     if np.random.random_integers(1, 100) <= mutation_chance:
         if algo == 'Forth' or recalgo == 'Forth':
             keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r', 'crlow', 'comlow', 'cmin', 'bbcomp']

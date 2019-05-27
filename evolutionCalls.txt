@@ -10,7 +10,7 @@ main_run.py --data "JKU-PDD" --pop 40 --gen 320 --base SIATECCompress --recalg "
 main_run.py --data "Fugues" --pop 40 --gen 320 --base SIATECCompress --recalg ""
 main_run.py --data "NLB individual files" --pop 40 --gen 320 --base SIATECCompress --recalg ""
 
-main_run.py --data "Fugues" --pop 80 --gen 200 --base Forth --recalg "" --sta 20 --stac 25
+* main_run.py --data "Fugues" --pop 80 --gen 200 --base Forth --recalg "" --sta 20 --stac 25
 main_run.py --data "Fugues" --pop 80 --gen 200 --base COSIATEC --recalg "" --sta 20 --stac 25
 main_run.py --data "Fugues" --pop 80 --gen 200 --base SIATECCompress --recalg "" --sta 20 --stac 25
 main_run.py --data "Fugues" --pop 80 --gen 200 --base RecurSIA --recalg "Forth" --sta 20 --stac 25
