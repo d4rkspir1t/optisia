@@ -13,9 +13,9 @@ def make_population(onoff_switches, multi_switches, pop_size, algo, recalgo, for
             chromosome[key] = switch[rng[idx]]
 
         if chromosome['ct'] != '':
-            i = np.random.random_integers(0, 3)
-            chromosome['cta'] = multi_switches['cta'][i]
             i = np.random.random_integers(0, 2)
+            chromosome['cta'] = multi_switches['cta'][i]
+            i = np.random.random_integers(0, 3)
             chromosome['ctb'] = multi_switches['ctb'][i]
         if chromosome['rsd'] != '':
             i = np.random.random_integers(0, 2)
@@ -28,7 +28,7 @@ def make_population(onoff_switches, multi_switches, pop_size, algo, recalgo, for
             chromosome['crlow'] = forth_multi['crlow'][i]
             i = np.random.random_integers(0, 2)
             chromosome['comlow'] = forth_multi['comlow'][i]
-            i = np.random.random_integers(0, 3)
+            i = np.random.random_integers(0, 2)
             chromosome['cmin'] = forth_multi['cmin'][i]
         if chromosome not in population and retry_count != 50:
             population.append(chromosome)
@@ -41,7 +41,7 @@ def make_population(onoff_switches, multi_switches, pop_size, algo, recalgo, for
     return population
 
 
-def artificial_selection(fitnesses, param_table, select_ratio=0.4):
+def artificial_selection(fitnesses, param_table, select_ratio=0.34):
     cut = int(len(fitnesses)*select_ratio)
     we_happy_few = [i[0] for i in sorted(enumerate(fitnesses), key=lambda x:x[1])][-cut:]
     kept_params = {}
@@ -53,101 +53,50 @@ def artificial_selection(fitnesses, param_table, select_ratio=0.4):
 
 
 def mutation(child, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, algo, recalgo):
-    mutation_idx = random.randint(0, len(child)-1)
-    mutation_chance = 101  # always mutates something
-    if np.random.random_integers(1, 100) <= mutation_chance:
-        if algo == 'Forth' or recalgo == 'Forth':
-            keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r', 'crlow', 'comlow', 'cmin', 'bbcomp']
-        else:
-            keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r']
-        key = keys[mutation_idx]
-        if key in onoff_switches.keys():
-            print('ONOFF KEY %s' % key)
-            i = np.random.random_integers(0, 1)
-            prev_value = child[mutation_idx]
-            child[mutation_idx] = onoff_switches[key][i]
-            # print('Original %s - New %s' % (prev_value, child[mutation_idx]))
-            # if prev_value != child[mutation_idx]:
-            #     print('FILL EXECUTES')
-            #     if child[2] != '':
-            #         i = np.random.random_integers(0, 3)
-            #         child[3] = multi_switches['cta'][i]
-            #         i = np.random.random_integers(0, 2)
-            #         child[4] = multi_switches['ctb'][i]
-            #         print('Filled missing ct >>')
-            #         print(child[2], child[3], child[4])
-            #     if child[5] != '':
-            #         i = np.random.random_integers(0, 2)
-            #         child[6] = multi_switches['r'][i]
-            #         print('Filled missing r >>')
-            #         print(child[5], child[6])
-
-        elif key in multi_switches.keys():
-            if child[2] != '':
-                if mutation_idx == 3:
-                    i = np.random.random_integers(0, 3)
-                    child[mutation_idx] = multi_switches[key][i]
-                if mutation_idx == 4:
+    if algo == 'Forth' or recalgo == 'Forth':
+        keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r', 'crlow', 'comlow', 'cmin', 'bbcomp']
+    else:
+        keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r']
+    mutation_chance = (1/(len(keys)))*100
+    print('Mutation chance: ', mutation_chance)
+    for mut_idx, key in enumerate(keys):
+        if np.random.random_integers(1, 100) <= mutation_chance:
+            if key in onoff_switches.keys():
+                print('ONOFF KEY %s' % key)
+                i = np.random.random_integers(0, 1)
+                child[mut_idx] = onoff_switches[key][i]
+            elif key in multi_switches.keys():
+                if child[2] != '':
+                    if mut_idx == 3:
+                        i = np.random.random_integers(0, 2)
+                        child[mut_idx] = multi_switches[key][i]
+                    if mut_idx == 4:
+                        i = np.random.random_integers(0, 3)
+                        child[mut_idx] = multi_switches[key][i]
+                if child[5] != '':
+                    if mut_idx == 6:
+                        i = np.random.random_integers(0, 2)
+                        child[mut_idx] = multi_switches[key][i]
+            elif key in forth_onoff_sw.keys():
+                i = np.random.random_integers(0, 1)
+                child[mut_idx] = forth_onoff_sw[key][i]
+            elif key in forth_multi_sw.keys():
                     i = np.random.random_integers(0, 2)
-                    child[mutation_idx] = multi_switches[key][i]
-            if child[5] != '':
-                if mutation_idx == 6:
-                    i = np.random.random_integers(0, 2)
-                    child[mutation_idx] = multi_switches[key][i]
-        elif key in forth_onoff_sw.keys():
-            i = np.random.random_integers(0, 1)
-            child[mutation_idx] = forth_onoff_sw[key][i]
-        elif key in forth_multi_sw.keys():
-            if key != 'cmin':
-                i = np.random.random_integers(0, 2)
-                child[mutation_idx] = forth_multi_sw[key][i]
-            else:
-                i = np.random.random_integers(0, 3)
-                child[mutation_idx] = forth_multi_sw[key][i]
+                    child[mut_idx] = forth_multi_sw[key][i]
     return child
 
 
 def breed(male_mrna, female_mrna, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, algo, recalgo):
     if algo == 'Forth' or recalgo == 'Forth':
-        male_trna = [male_mrna[0],
-                     male_mrna[1],
-                     male_mrna[2],
-                     male_mrna[4],
-                     male_mrna[6],
-                     male_mrna[7],
-                     male_mrna[9],
-                     male_mrna[11],
-                     male_mrna[15],
-                     male_mrna[19],
-                     male_mrna[20]]
-        female_trna = [female_mrna[0],
-                       female_mrna[1],
-                       female_mrna[2],
-                       female_mrna[4],
-                       female_mrna[6],
-                       female_mrna[7],
-                       female_mrna[9],
-                       female_mrna[11],
-                       female_mrna[15],
-                       female_mrna[19],
-                       female_mrna[20]]
+        idx_for_trna = [0, 1, 2, 4, 6, 7, 9, 11, 15, 19, 20]
     else:
-        male_trna = [male_mrna[0],
-                     male_mrna[1],
-                     male_mrna[2],
-                     male_mrna[4],
-                     male_mrna[6],
-                     male_mrna[7],
-                     male_mrna[9]]
-        female_trna = [female_mrna[0],
-                       female_mrna[1],
-                       female_mrna[2],
-                       female_mrna[4],
-                       female_mrna[6],
-                       female_mrna[7],
-                       female_mrna[9]]
+        idx_for_trna = [0, 1, 2, 4, 6, 7, 9]
+
+    male_trna = [male_mrna[idx] for idx in idx_for_trna]
+    female_trna = [female_mrna[idx] for idx in idx_for_trna]
+
     children = []
-    for _ in range(2):
+    for _ in range(4):  # TODO: make it a variable that depends on the needed amount and the starting parent count
         child = []
         for param in range(0, len(male_trna)):
             child.append(random.choice([female_trna[param],
@@ -171,72 +120,61 @@ def cross_breeding(happy_few, population_size, onoff_switches, multi_switches, f
     need = population_size-parent_count
     print(happy_few)
     print('P count %d, need %d' % (parent_count, need))
+
     population = []
     for idx, params in enumerate(happy_few.values()):
         if algo == 'Forth' or recalgo == 'Forth':
             keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r', 'crlow', 'comlow', 'cmin', 'bbcomp']
-            real_params = [params[0],
-                           params[1],
-                           params[2],
-                           params[4],
-                           params[6],
-                           params[7],
-                           params[9],
-                           params[11],
-                           params[15],
-                           params[19],
-                           params[20]]
+            idx_for_params = [0, 1, 2, 4, 6, 7, 9, 11, 15, 19, 20]
         else:
             keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r']
-            real_params = [params[0],
-                           params[1],
-                           params[2],
-                           params[4],
-                           params[6],
-                           params[7],
-                           params[9]]
+            idx_for_params = [0, 1, 2, 4, 6, 7, 9]
+        real_params = [params[idx] for idx in idx_for_params]
+
         member = {}
         for idx, key in enumerate(keys):
             member[key] = real_params[idx]
         population.append(member)
     print('Parents added: pop - %d' % len(population))
     retry_count = 0
-    while len(population) != population_size:
+
+    while len(population) != population_size and parent_count >= 2:
+        remove_parents = False
         male = random.randint(0, parent_count-1)
         female = random.randint(0, parent_count-1)
         print('Parents selected')
+
         if male == female:
             if male != 0:
                 male = male-1
             else:
                 male = male+1
-        if male != female:
-            male_key = list(happy_few.keys())[male]
-            female_key = list(happy_few.keys())[female]
-            male_mrna = happy_few[male_key]
-            female_mrna = happy_few[female_key]
-            children = breed(male_mrna, female_mrna, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, algo, recalgo)
-            for child in children:
-                if child not in population and len(population) != population_size:
-                    population.append(child)
-                    retry_count = 0
-                elif len(population) != population_size and retry_count == 25:
-                    population.append(child)
-                    retry_count = 0
-                elif child in population and len(population) != population_size:
-                    retry_count += 1
-            print('Population length %d' % len(population))
+
+        male_key = list(happy_few.keys())[male]
+        female_key = list(happy_few.keys())[female]
+        male_mrna = happy_few[male_key]
+        female_mrna = happy_few[female_key]
+        children = breed(male_mrna, female_mrna, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, algo, recalgo)
+        for child in children:
+            if len(population) != population_size:
+                population.append(child)
+                remove_parents = True
+        if remove_parents:
+            del happy_few[male_key]
+            del happy_few[female_key]
+            parent_count = len(happy_few.values())
+        print('Population length %d' % len(population))
     for member in population:
         if member['rsd'] == '-rsd' and member['r'] == '':
             i = np.random.random_integers(0, 2)
             member['r'] = multi_switches['r'][i]
             print('Preventive R generation')
         if member['ct'] == '-ct' and member['cta'] == '':
-            i = np.random.random_integers(0, 3)
+            i = np.random.random_integers(0, 2)
             member['cta'] = multi_switches['cta'][i]
             print('Preventive CTA generation')
         if member['ct'] == '-ct' and member['ctb'] == '':
-            i = np.random.random_integers(0, 2)
+            i = np.random.random_integers(0, 3)
             member['ctb'] = multi_switches['ctb'][i]
             print('Preventive CTB generation')
     return population
