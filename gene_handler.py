@@ -53,39 +53,36 @@ def artificial_selection(fitnesses, param_table, select_ratio=0.34):
 
 
 def mutation(child, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, algo, recalgo):
-    mutation_idx = random.randint(0, len(child)-1)
-    mutation_chance = 50  # TODO: make it a variable to control from outside of this function
-    # mutation_chance = 1/len(keys)*100
-    if np.random.random_integers(1, 100) <= mutation_chance:
-        if algo == 'Forth' or recalgo == 'Forth':
-            keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r', 'crlow', 'comlow', 'cmin', 'bbcomp']
-        else:
-            keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r']
-        key = keys[mutation_idx]
-        if key in onoff_switches.keys():
-            print('ONOFF KEY %s' % key)
-            i = np.random.random_integers(0, 1)
-            prev_value = child[mutation_idx]
-            child[mutation_idx] = onoff_switches[key][i]
-
-        elif key in multi_switches.keys():
-            if child[2] != '':
-                if mutation_idx == 3:
+    if algo == 'Forth' or recalgo == 'Forth':
+        keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r', 'crlow', 'comlow', 'cmin', 'bbcomp']
+    else:
+        keys = ['d', 'rrt', 'ct', 'cta', 'ctb', 'rsd', 'r']
+    mutation_chance = (1/(len(keys)))*100
+    print('Mutation chance: ', mutation_chance)
+    for mut_idx, key in enumerate(keys):
+        if np.random.random_integers(1, 100) <= mutation_chance:
+            if key in onoff_switches.keys():
+                print('ONOFF KEY %s' % key)
+                i = np.random.random_integers(0, 1)
+                child[mut_idx] = onoff_switches[key][i]
+            elif key in multi_switches.keys():
+                if child[2] != '':
+                    if mut_idx == 3:
+                        i = np.random.random_integers(0, 2)
+                        child[mut_idx] = multi_switches[key][i]
+                    if mut_idx == 4:
+                        i = np.random.random_integers(0, 3)
+                        child[mut_idx] = multi_switches[key][i]
+                if child[5] != '':
+                    if mut_idx == 6:
+                        i = np.random.random_integers(0, 2)
+                        child[mut_idx] = multi_switches[key][i]
+            elif key in forth_onoff_sw.keys():
+                i = np.random.random_integers(0, 1)
+                child[mut_idx] = forth_onoff_sw[key][i]
+            elif key in forth_multi_sw.keys():
                     i = np.random.random_integers(0, 2)
-                    child[mutation_idx] = multi_switches[key][i]
-                if mutation_idx == 4:
-                    i = np.random.random_integers(0, 3)
-                    child[mutation_idx] = multi_switches[key][i]
-            if child[5] != '':
-                if mutation_idx == 6:
-                    i = np.random.random_integers(0, 2)
-                    child[mutation_idx] = multi_switches[key][i]
-        elif key in forth_onoff_sw.keys():
-            i = np.random.random_integers(0, 1)
-            child[mutation_idx] = forth_onoff_sw[key][i]
-        elif key in forth_multi_sw.keys():
-                i = np.random.random_integers(0, 2)
-                child[mutation_idx] = forth_multi_sw[key][i]
+                    child[mut_idx] = forth_multi_sw[key][i]
     return child
 
 

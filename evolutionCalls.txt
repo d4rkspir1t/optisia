@@ -1,3 +1,17 @@
+## 29/05/2019 - Optimized parameters for Fugues analysis
+
+main_run.py --data "Fugues" --pop 12 --gen 150 --base COSIATEC --recalg "" --sta 30 --stac 15
+main_run.py --data "Fugues" --pop 15 --gen 150 --base SIATECCompress --recalg "" --sta 30 --stac 15
+main_run.py --data "Fugues" --pop 18 --gen 150 --base Forth --recalg "" --sta 40 --stac 30
+
+main_run.py --data "Fugues" --pop 12 --gen 150 --base RecurSIA --recalg "COSIATEC" --sta 30 --stac 15
+main_run.py --data "Fugues" --pop 12 --gen 150 --base RecurSIA --recalg "SIATECCompress" --sta 30 --stac 15
+main_run.py --data "Fugues" --pop 21 --gen 150 --base RecurSIA --recalg "Forth" --sta 40 --stac 30
+
+---
+
+## Original run commands
+
 main_run.py --data "JKU-PDD" --pop 70 --gen 1000 --base Forth --recalg "" --sta 250 --stac 50
 main_run.py --data "Fugues" --pop 70 --gen 1000 --base Forth --recalg "" --sta 250 --stac 50
 main_run.py --data "NLB individual files" --pop 70 --gen 1000 --base Forth --recalg "" --sta 250 --stac 50
