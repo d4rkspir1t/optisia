@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+    <script src="https://cdn.anychart.com/releases/v8/js/anychart-core.min.js"></script>
+    <script src="https://cdn.anychart.com/releases/v8/js/anychart-sankey.min.js"></script>
+
+    <style>
+        .anychart-credits {display: none;}
+    </style>
+    
+</head>
+<body>
+    <div id="container"></div>
+    <script>
+        var data = [
+            {from: "Google", to: "Facebook", weight: 200},
+            {from: "Google", to: "Twitter", weight: 17000},
+            {from: "Google", to: "YouTube", weight: 8000},
+            {from: "Google", to: "Wikipedia", weight: 11000},
+            {from: "Bing", to: "Facebook", weight: 7500},
+            {from: "Bing", to: "Twitter", weight: 5000},
+            {from: "Bing", to: "Twitter", weight: 5000},
+            {from: "Twitter", to: "Facebook", weight: 5000},
+            {from: "Bing", to: "Wikipedia", weight: 4000}
+        ];
+        var sankey_chart = anychart.sankey(data);
+
+        sankey_chart.container("container");
+        sankey_chart.draw();
+
+    </script>
+</body>
+</html>
