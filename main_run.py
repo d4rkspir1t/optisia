@@ -1,107 +1,19 @@
 import argparse
-import csv
 from datetime import datetime
 import numpy as np
 import os
-import pprint
-import shutil
 import time
 
 import gene_handler as gh
+import io_handler as ioh
 from jar_handler import JarCall
 from switch_handler import Switches
-
-extension_map = {'COSIATEC': '.cos',
-                 'SIATECCompress': '.SIATECCompress',
-                 'Forth': '.Forth',
-                 'RecurSIA': '.RecurSIA'}
 
 tested_params = []
 tested_param_compression = {}
 
 
-def log_times(path, t_type, time, gen, idx):
-    if not os.path.exists(path):
-        with open(path, 'w', newline='') as file:
-            writer = csv.writer(file, delimiter=';')
-            header = ['timed', 'gen', 'idx', 'min', 'sec']
-            writer.writerow(header)
-            c_min, c_sec = divmod(time, 60)
-
-            c_min_str = '%02d' % c_min
-            c_sec_str = '%.3f' % c_sec
-            line = [t_type, gen, idx, c_min_str, c_sec_str]
-            writer.writerow(line)
-    else:
-        with open(path, 'a', newline='') as file:
-            writer = csv.writer(file, delimiter=';')
-            c_min, c_sec = divmod(time, 60)
-
-            c_min_str = '%02d' % c_min
-            c_sec_str = '%.3f' % c_sec
-            line = [t_type, gen, idx, c_min_str, c_sec_str]
-            writer.writerow(line)
-
-
-def save_param_fitnesses(path_fitness, gen, param_fitness_dict, param_table):
-    if not os.path.exists(path_fitness):
-        with open(path_fitness, 'w', newline='') as file:
-            writer = csv.writer(file, delimiter=';')
-            header = ['generation', 'idx', 'fitness']
-            for x in range(0, len(param_table[0])):
-                header.append('param%d' % x)
-            writer.writerow(header)
-            for idx, fit in enumerate(param_fitness_dict):
-                line = [str(gen), str(idx), str(fit)]
-                for param in param_table[idx]:
-                    line.append(param)
-                writer.writerow(line)
-    else:
-        with open(path_fitness, 'a', newline='') as file:
-            writer = csv.writer(file, delimiter=';')
-            for idx, fit in enumerate(param_fitness_dict):
-                line = [str(gen), str(idx), str(fit)]
-                for param in param_table[idx]:
-                    line.append(param)
-                writer.writerow(line)
-
-
-def read_compression_from_file(f_path):
-    with open(f_path) as f:
-        for line in f:
-            if 'compressionRatio' in line:
-                cr_str = line.split(' ')[1]
-                cr_float = float(cr_str)
-                print(cr_float)
-                return cr_float
-
-
-def get_path_for_results(base_path, algorithm):
-    extension = extension_map[algorithm]
-    # print(extension)
-    for item in os.listdir(base_path):
-        new_path = os.path.join(base_path, item)
-        if os.path.isdir(new_path):
-            for file in os.listdir(new_path):
-                file_path = os.path.join(new_path, file)
-                # print(os.path.splitext(file)[1])
-                if extension == os.path.splitext(file)[1]:
-                    compression_ratio = read_compression_from_file(file_path)
-                    shutil.rmtree(new_path)
-                    # exit(417)
-                    return compression_ratio
-            exit(999)
-
-
-def parse_samples(path=''):
-    pieces = []
-    for root, dirs, files in os.walk(path, topdown=False):
-        for name in files:
-            pieces.append(os.path.join(root, name))
-    return pieces
-
-
-def get_fitness_for_generation(chromosomes, folder, piece, algo, recalgo, path_time_log, gen):
+def get_fitness_for_generation(chromosomes, folder, algo, recalgo, path_time_log, gen):
     param_fitnesses = []
     param_table = {}
     table_idx = 0
@@ -167,7 +79,7 @@ def get_fitness_for_generation(chromosomes, folder, piece, algo, recalgo, path_t
             tested_params.append(filtered_call_args)
             caller.make_call(filtered_call_args)
 
-            compression_ratio = get_path_for_results(folder, algo)
+            compression_ratio = ioh.get_path_for_results(folder, algo)
             tested_param_compression[tested_params.index(filtered_call_args)] = compression_ratio
             print('CACHING CALL AND CALCULATED COMPRESSION RATIO')
         else:
@@ -177,22 +89,21 @@ def get_fitness_for_generation(chromosomes, folder, piece, algo, recalgo, path_t
         param_table[table_idx] = params
         param_fitnesses.append(compression_ratio)
         table_idx += 1
+
         elapsed_time_chrom = time.time()-start_t_chrom
-        log_times(path_time_log, 'chrom', elapsed_time_chrom, gen, str(table_idx-1))
-    # pprint.pprint(param_fitnesses)
-    # pprint.pprint(param_table)
-    # exit(417)
+        ioh.log_times(path_time_log, 'chrom', elapsed_time_chrom, gen, str(table_idx-1))
+
     return param_fitnesses, param_table
 
 
-def check_stagnation(param_fitness_dict, best_fitness):
+def check_stagnation(param_fit_dict, best_fit):
     stagnating = True
-    for fitness in param_fitness_dict:
-        if fitness > best_fitness:
-            best_fitness = fitness
+    for fitness in param_fit_dict:
+        if fitness > best_fit:
+            best_fit = fitness
             stagnating = False
             break
-    return best_fitness, stagnating
+    return best_fit, stagnating
 
 
 if __name__ == '__main__':
@@ -211,15 +122,13 @@ if __name__ == '__main__':
                         help="Generation count")
     parser.add_argument("--stac", type=int, default=30,
                         help="Generation count")
-    parser.add_argument("--sel", type=float, default="0.4",
+    parser.add_argument("--sel", type=float, default="0.34",
                         help="Artificial selection cutoff on each generation.")
-    # parser.add_argument("--plot", action="store_true",
-    #                     help="Plotting recorded variable lists")
     args = parser.parse_args()
 
     population_size = args.pop
     folder_path = os.path.join('samples', args.data)
-    pieces = parse_samples(folder_path)
+    pieces = ioh.parse_samples(folder_path)
     elapsed_times = []
     all_start = time.time()
 
@@ -227,7 +136,7 @@ if __name__ == '__main__':
         start_t_piece = time.time()
         print('Evolving for piece: %s' % piece)
         print('#' * 50)
-        # >>>>>
+
         switch_mngr = Switches(str(args.base), piece, str(args.recalg))
 
         onoff_switches = {'d': switch_mngr.pitch,
@@ -248,26 +157,30 @@ if __name__ == '__main__':
             forth_onoff_sw = {}
             forth_multi_sw = {}
 
-        artificially_selected = []
         chromosomes = gh.make_population(onoff_switches, multi_switches, population_size,
                                          args.base, args.recalg, forth_onoff_sw, forth_multi_sw)
+
         ts = datetime.now().strftime('%d%m%y%H%M%S')
         pn = os.path.basename(piece).split('.')[0]
-        path_time_log_file = '%s%s-%s-%s-%s.log' % (args.base, args.recalg, args.data, pn, ts)
-        path_time_log = os.path.join('results', path_time_log_file)
-        path_fitness_file = '%s%s-%s-%s-%s.csv' % (args.base, args.recalg, args.data, pn, ts)
-        path_fitness = os.path.join('results', path_fitness_file)
+        path_file_name_format = '%s%s-%s-%s-%s' % (args.base, args.recalg, args.data, pn, ts)
+        path_time_log = os.path.join('results', path_file_name_format + '.log')
+        path_fitness = os.path.join('results', path_file_name_format + '.csv')
+
         best_fitness = 0
         stagnating_for_count = 0
         for generation in range(1, args.gen+1):
             start_t_gen = time.time()
 
-            param_fitness_dict, param_table = get_fitness_for_generation(chromosomes, folder_path, piece, args.base, args.recalg, path_time_log, str(generation))
-            save_param_fitnesses(path_fitness, generation, param_fitness_dict, param_table)
+            param_fitness_dict, param_table = get_fitness_for_generation(chromosomes, folder_path, args.base,
+                                                                         args.recalg, path_time_log, str(generation))
+            ioh.save_param_fitnesses(path_fitness, generation, param_fitness_dict, param_table)
             happy_few = gh.artificial_selection(param_fitness_dict, param_table, args.sel)
-            chromosomes = gh.cross_breeding(happy_few, population_size, onoff_switches, multi_switches, forth_onoff_sw, forth_multi_sw, args.base, args.recalg)
+            chromosomes = gh.cross_breeding(happy_few, population_size, onoff_switches, multi_switches, forth_onoff_sw,
+                                            forth_multi_sw, args.base, args.recalg)
+
             elapsed_time_gen = time.time()-start_t_gen
-            log_times(path_time_log, 'gen', elapsed_time_gen, str(generation), '')
+            ioh.log_times(path_time_log, 'gen', elapsed_time_gen, str(generation), '')
+
             best_fitness, stagnating_pop = check_stagnation(param_fitness_dict, best_fitness)
             if stagnating_pop and generation > args.sta:
                 if stagnating_for_count < args.stac:
@@ -275,13 +188,16 @@ if __name__ == '__main__':
                 else:
                     print('POPULATION CEASED TO GET BETTER')
                     break
+
         elapsed_time_piece = time.time()-start_t_piece
-        log_times(path_time_log, 'piece', elapsed_time_piece, '', '')
+        ioh.log_times(path_time_log, 'piece', elapsed_time_piece, '', '')
         print('\n'*20)
+
         tested_params = []
         tested_param_compression = {}
         elapsed_times.append(elapsed_time_piece)
         # exit(417)
+
     print('\n')
     print('#' * 50)
     print('#' * 50, '\n')
